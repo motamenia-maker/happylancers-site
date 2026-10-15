@@ -439,9 +439,17 @@
     const LOCAL = location.hostname === 'localhost' || location.hostname.startsWith('192.168.');
     const APP_URL = LOCAL ? `${location.protocol}//${location.hostname}:8081` : '';   // TODO: the app's public address once it is online
 
+    // Campaign tags on this page's link (utm_source / utm_medium / utm_campaign, ref) travel on to the
+    // app so it can credit the right campaign at sign-up (RULES §11.3).
+    const tags = new URLSearchParams();
+    for (const [k, v] of new URLSearchParams(location.search)) {
+      if (/^(utm_source|utm_medium|utm_campaign|ref)$/.test(k)) tags.set(k, v.slice(0, 100));
+    }
+    const withTags = (url) => (tags.toString() ? `${url}${url.includes('?') ? '&' : '?'}${tags}` : url);
+
     // App links open the app when it is reachable; otherwise they become early-access links
     document.querySelectorAll('[data-app-link]').forEach((a) => {
-      if (APP_URL) { a.href = APP_URL; return; }
+      if (APP_URL) { a.href = withTags(APP_URL); return; }
       if (a.closest('.nav-links')) { a.hidden = true; return; }
       a.textContent = 'Get early access';
       a.setAttribute('data-beta-link', '');
